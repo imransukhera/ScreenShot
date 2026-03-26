@@ -1,0 +1,81 @@
+{
+  "name": "desktop-monitor",
+  "version": "1.0.0",
+  "description": "Background activity and screenshot monitor",
+  "main": "src/main/index.js",
+  "scripts": {
+    "start": "env -u ELECTRON_RUN_AS_NODE electron .",
+    "dev": "env -u ELECTRON_RUN_AS_NODE electron . --dev",
+    "build": "electron-builder",
+    "build:mac": "electron-builder --mac",
+    "build:win": "electron-builder --win",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "keywords": [
+    "electron",
+    "monitor",
+    "screenshot"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "better-sqlite3": "^12.8.0",
+    "date-fns": "^3.6.0",
+    "electron-store": "^8.2.0",
+    "get-windows": "^9.3.0",
+    "screenshot-desktop": "^1.15.3",
+    "uiohook-napi": "^1.5.5"
+  },
+  "devDependencies": {
+    "electron": "^28.3.3",
+    "electron-builder": "^24.0.0"
+  },
+  "build": {
+    "appId": "com.desktopmonitor.app",
+    "productName": "Desktop Monitor",
+    "asar": true,
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "category": "public.app-category.productivity"
+    },
+    "dmg": {
+      "title": "Desktop Monitor Installer",
+      "window": {
+        "width": 540,
+        "height": 380
+      }
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "runAfterFinish": true,
+      "installerHeader": "assets/tray-icon.png"
+    }
+  }
+}
