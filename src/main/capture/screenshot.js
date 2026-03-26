@@ -68,6 +68,14 @@ async function captureNow(mainWindow) {
     return record;
   } catch (err) {
     console.error('Screenshot failed:', err.message);
+    // Show tray notification so errors are visible in packaged/Windows builds
+    try {
+      const { Notification } = require('electron');
+      new Notification({
+        title: 'Desktop Monitor — Screenshot Error',
+        body: err.message
+      }).show();
+    } catch {}
     return null;
   }
 }

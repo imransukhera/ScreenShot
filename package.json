@@ -34,6 +34,12 @@
     "appId": "com.desktopmonitor.app",
     "productName": "Desktop Monitor",
     "asar": true,
+    "asarUnpack": [
+      "node_modules/screenshot-desktop/**/*",
+      "node_modules/uiohook-napi/**/*",
+      "node_modules/get-windows/**/*",
+      "node_modules/better-sqlite3/**/*"
+    ],
     "directories": {
       "output": "dist"
     },
