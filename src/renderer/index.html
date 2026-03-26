@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Desktop Monitor</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f0f23;
+      --bg2: #1a1a2e;
+      --bg3: #16213e;
+      --accent: #4fc3f7;
+      --accent2: #7c4dff;
+      --green: #00e676;
+      --red: #ff5252;
+      --yellow: #ffea00;
+      --text: #e0e0e0;
+      --text2: #9e9e9e;
+      --border: #2a2a4a;
+      --card: #1e1e3a;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* TOP BAR */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      -webkit-app-region: drag;
+      flex-shrink: 0;
+    }
+    .topbar > * { -webkit-app-region: no-drag; }
+    .logo { font-size: 16px; font-weight: 700; color: var(--accent); letter-spacing: 0.5px; }
+    .logo span { color: var(--accent2); }
+    .status-badge {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px; font-weight: 600;
+      padding: 4px 10px; border-radius: 20px;
+    }
+    .status-badge.running { background: rgba(0,230,118,0.15); color: var(--green); }
+    .status-badge.paused  { background: rgba(255,82,82,0.15);  color: var(--red); }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+    .status-dot.pulse { animation: pulse 1.5s infinite; }
+    @keyframes pulse {
+      0%,100% { opacity:1; } 50% { opacity:0.3; }
+    }
+    .nav { display: flex; gap: 4px; }
+    .nav-btn {
+      background: none; border: none; cursor: pointer;
+      padding: 6px 14px; border-radius: 6px;
+      color: var(--text2); font-size: 13px; font-weight: 500;
+      transition: all 0.15s;
+    }
+    .nav-btn:hover { background: var(--border); color: var(--text); }
+    .nav-btn.active { background: var(--accent2); color: white; }
+    .topbar-actions { display: flex; gap: 8px; align-items: center; }
+    .btn {
+      border: none; cursor: pointer; border-radius: 6px;
+      font-size: 12px; font-weight: 600; padding: 6px 12px;
+      transition: all 0.15s; display: flex; align-items: center; gap: 5px;
+    }
+    .btn-primary { background: var(--accent); color: #000; }
+    .btn-primary:hover { background: #81d4fa; }
+    .btn-danger  { background: var(--red);   color: #fff; }
+    .btn-danger:hover  { opacity: 0.85; }
+    .btn-success { background: var(--green); color: #000; }
+    .btn-success:hover { opacity: 0.85; }
+    .btn-ghost {
+      background: var(--card); color: var(--text2);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { color: var(--text); border-color: var(--accent); }
+
+    /* MAIN LAYOUT */
+    .main { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+
+    /* STATS ROW */
+    .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .stat-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px 16px;
+    }
+    .stat-label { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .stat-value { font-size: 26px; font-weight: 700; color: var(--accent); }
+    .stat-sub   { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+    /* ACTIVITY CHART */
+    .chart-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 10px; padding: 16px;
+    }
+    .card-title {
+      font-size: 13px; font-weight: 600; color: var(--text2);
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .chart-area { height: 120px; position: relative; overflow: hidden; }
+    .chart-bars {
+      display: flex; align-items: flex-end; gap: 3px;
+      height: 100%; padding-bottom: 20px;
+    }
+    .chart-bar-wrap {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: flex-end; gap: 2px;
+      min-width: 0;
+    }
+    .chart-bar {
+      width: 100%; border-radius: 3px 3px 0 0;
+      transition: height 0.3s ease;
+      min-height: 2px;
+    }
+    .chart-label { font-size: 9px; color: var(--text2); white-space: nowrap; overflow: hidden; }
+    .chart-empty { color: var(--text2); font-size: 13px; text-align: center; padding: 30px; }
+
+    /* SCREENSHOTS GRID */
+    .screenshots-header {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
+    }
+    .screenshots-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 10px;
+    }
+    .ss-card {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 8px; overflow: hidden; cursor: pointer;
+      transition: all 0.15s; position: relative;
+    }
+    .ss-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 20px rgba(79,195,247,0.15); }
+    .ss-img {
+      width: 100%; height: 100px; object-fit: cover;
+      background: var(--bg2); display: block;
+    }
+    .ss-img-placeholder {
+      width: 100%; height: 100px;
+      background: linear-gradient(135deg, var(--bg2), var(--bg3));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; color: var(--border);
+    }
+    .ss-info { padding: 7px 8px; }
+    .ss-time { font-size: 11px; color: var(--accent); font-weight: 600; }
+    .ss-app  { font-size: 10px; color: var(--text2); margin-top: 2px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .ss-del {
+      position: absolute; top: 5px; right: 5px;
+      width: 20px; height: 20px; border-radius: 50%;
+      background: rgba(255,82,82,0.85); color: white;
+      border: none; cursor: pointer; font-size: 12px;
+      display: none; align-items: center; justify-content: center;
+    }
+    .ss-card:hover .ss-del { display: flex; }
+
+    /* SETTINGS */
+    .settings-grid { display: flex; flex-direction: column; gap: 14px; max-width: 600px; }
+    .setting-row {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 10px; padding: 16px;
+    }
+    .setting-label { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+    .setting-desc  { font-size: 11px; color: var(--text2); margin-bottom: 10px; }
+    .setting-input {
+      background: var(--bg2); border: 1px solid var(--border);
+      color: var(--text); border-radius: 6px; padding: 7px 10px;
+      font-size: 13px; width: 100%;
+    }
+    .setting-input:focus { outline: none; border-color: var(--accent); }
+    .range-row { display: flex; align-items: center; gap: 12px; }
+    input[type=range] { flex: 1; accent-color: var(--accent); }
+    .range-val { min-width: 50px; text-align: right; font-size: 13px; color: var(--accent); font-weight: 600; }
+    .toggle-row { display: flex; align-items: center; gap: 12px; }
+    .toggle { width: 40px; height: 22px; background: var(--border); border-radius: 11px; position: relative; cursor: pointer; transition: background 0.2s; }
+    .toggle.on { background: var(--accent2); }
+    .toggle::after {
+      content: ''; position: absolute; top: 3px; left: 3px;
+      width: 16px; height: 16px; border-radius: 50%; background: white;
+      transition: transform 0.2s;
+    }
+    .toggle.on::after { transform: translateX(18px); }
+    .dir-row { display: flex; gap: 8px; }
+    .dir-input { flex: 1; }
+    .save-btn-row { margin-top: 10px; }
+
+    /* LIGHTBOX */
+    .lightbox {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000; padding: 20px;
+    }
+    .lightbox-inner { max-width: 90vw; max-height: 90vh; position: relative; }
+    .lightbox img { max-width: 100%; max-height: 80vh; border-radius: 8px; display: block; }
+    .lightbox-meta { margin-top: 10px; text-align: center; font-size: 13px; color: var(--text2); }
+    .lightbox-close {
+      position: absolute; top: -12px; right: -12px;
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--red); color: white; border: none;
+      cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center;
+    }
+
+    /* EMPTY STATE */
+    .empty {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; padding: 50px; color: var(--text2); gap: 12px;
+    }
+    .empty-icon { font-size: 48px; }
+    .empty-text { font-size: 15px; }
+    .empty-sub  { font-size: 13px; }
+
+    /* SCROLL */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* APP COLORS */
+    .bar-0 { background: #4fc3f7; }
+    .bar-1 { background: #7c4dff; }
+    .bar-2 { background: #00e676; }
+    .bar-3 { background: #ff6b6b; }
+    .bar-4 { background: #ffd740; }
+    .bar-5 { background: #ff80ab; }
+    .bar-default { background: #546e7a; }
+  </style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="logo">📹 Desktop<span>Monitor</span></div>
+
+  <div class="nav">
+    <button class="nav-btn active" onclick="showView('dashboard')">Dashboard</button>
+    <button class="nav-btn" onclick="showView('screenshots')">Screenshots</button>
+    <button class="nav-btn" onclick="showView('settings')">Settings</button>
+  </div>
+
+  <div class="topbar-actions">
+    <span id="statusBadge" class="status-badge running">
+      <span class="status-dot pulse"></span>
+      <span id="statusText">Recording</span>
+    </span>
+    <button class="btn btn-ghost" id="captureNowBtn" onclick="captureNow()">📸 Capture</button>
+    <button class="btn btn-danger"  id="stopBtn"    onclick="toggleCapture()">⏸ Pause</button>
+  </div>
+</div>
+
+<!-- DASHBOARD VIEW -->
+<div id="view-dashboard" class="main">
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-label">Screenshots Today</div>
+      <div class="stat-value" id="statScreenshots">0</div>
+      <div class="stat-sub" id="statNextCapture">Waiting...</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Active App</div>
+      <div class="stat-value" id="statActiveApp" style="font-size:14px;line-height:1.5;padding-top:4px;">—</div>
+      <div class="stat-sub">current window</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Mouse Clicks</div>
+      <div class="stat-value" id="statClicks">0</div>
+      <div class="stat-sub">today</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Key Presses</div>
+      <div class="stat-value" id="statKeys">0</div>
+      <div class="stat-sub">today</div>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="card-title">
+      <span>Activity Timeline (Today)</span>
+      <span id="activityAppLegend" style="font-size:11px;color:var(--text2)"></span>
+    </div>
+    <div class="chart-area">
+      <div id="chartBars" class="chart-bars"></div>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="screenshots-header">
+      <div class="card-title" style="margin-bottom:0">Recent Screenshots</div>
+      <button class="btn btn-ghost" style="font-size:11px" onclick="showView('screenshots')">View All →</button>
+    </div>
+    <div id="recentGrid" class="screenshots-grid"></div>
+  </div>
+</div>
+
+<!-- SCREENSHOTS VIEW -->
+<div id="view-screenshots" class="main" style="display:none">
+  <div class="chart-card">
+    <div class="screenshots-header">
+      <div class="card-title" style="margin-bottom:0">All Screenshots</div>
+      <div style="display:flex;gap:8px">
+        <input type="date" id="filterDate" class="setting-input" style="width:150px;padding:5px 8px;font-size:12px" onchange="loadScreenshots()" />
+        <button class="btn btn-ghost" onclick="clearDateFilter()">Clear</button>
+      </div>
+    </div>
+    <div id="allScreenshotsGrid" class="screenshots-grid"></div>
+    <div id="noScreenshots" class="empty" style="display:none">
+      <div class="empty-icon">📷</div>
+      <div class="empty-text">No screenshots yet</div>
+      <div class="empty-sub">Screenshots will appear here as they are taken</div>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS VIEW -->
+<div id="view-settings" class="main" style="display:none">
+  <div class="settings-grid">
+
+    <div class="setting-row">
+      <div class="setting-label">Capture Interval</div>
+      <div class="setting-desc">How often to take a screenshot automatically</div>
+      <div class="range-row">
+        <input type="range" id="intervalRange" min="5" max="300" value="30" oninput="updateIntervalLabel()" />
+        <span class="range-val" id="intervalLabel">30s</span>
+      </div>
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-label">Screenshots Folder</div>
+      <div class="setting-desc">Where to save captured screenshots</div>
+      <div class="dir-row">
+        <input type="text" id="storageDirInput" class="setting-input dir-input" placeholder="Select a folder..." readonly />
+        <button class="btn btn-ghost" onclick="selectDir()">Browse</button>
+      </div>
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-label">Keep Screenshots For</div>
+      <div class="setting-desc">Screenshots older than this will be automatically deleted</div>
+      <div class="range-row">
+        <input type="range" id="maxDaysRange" min="1" max="90" value="30" oninput="updateMaxDaysLabel()" />
+        <span class="range-val" id="maxDaysLabel">30 days</span>
+      </div>
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-label">Launch at Login</div>
+      <div class="setting-desc">Start Desktop Monitor automatically when you log in</div>
+      <div class="toggle-row">
+        <div class="toggle" id="launchToggle" onclick="toggleLaunch()"></div>
+        <span id="launchLabel">Off</span>
+      </div>
+    </div>
+
+    <div class="save-btn-row">
+      <button class="btn btn-primary" onclick="saveSettings()">💾 Save Settings</button>
+      <span id="saveMsg" style="margin-left:12px;font-size:12px;color:var(--green);display:none">✓ Saved!</span>
+    </div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div id="lightbox" class="lightbox" style="display:none" onclick="closeLightbox(event)">
+  <div class="lightbox-inner">
+    <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+    <img id="lightboxImg" src="" alt="Screenshot" />
+    <div class="lightbox-meta" id="lightboxMeta"></div>
+  </div>
+</div>
+
+<script>
+// ─── State ───────────────────────────────────────────────────────
+let isRunning = true;
+let screenshots = [];
+let activityData = [];
+let settings = {};
+let statusInterval = null;
+
+// ─── Init ─────────────────────────────────────────────────────────
+async function init() {
+  settings = await window.monitor.getSettings();
+  isRunning = settings.isRunning;
+
+  updateStatusUI();
+  loadSettings();
+
+  // Load data
+  await Promise.all([loadDashboardData(), loadScreenshots()]);
+
+  // Start status countdown
+  statusInterval = setInterval(async () => {
+    const status = await window.monitor.getStatus();
+    isRunning = status.isRunning;
+    updateStatusUI();
+    if (status.nextCaptureIn !== null) {
+      document.getElementById('statNextCapture').textContent =
+        `Next in ${status.nextCaptureIn}s`;
+    }
+  }, 1000);
+
+  // Live events
+  window.monitor.onScreenshotNew((ss) => {
+    screenshots.unshift(ss);
+    updateStatsCount();
+    renderRecentGrid();
+    renderAllGrid();
+  });
+
+  window.monitor.onActivityUpdate((row) => {
+    activityData.push(row);
+    renderChart();
+    updateActivityStats();
+  });
+
+  window.monitor.onStatusChanged((data) => {
+    isRunning = data.isRunning;
+    updateStatusUI();
+  });
+}
+
+// ─── Dashboard ────────────────────────────────────────────────────
+async function loadDashboardData() {
+  const today = new Date().toISOString().slice(0, 10);
+
+  const [ssList, actList] = await Promise.all([
+    window.monitor.getScreenshots({ date: today, limit: 50 }),
+    window.monitor.getActivity({ start: today + 'T00:00', end: today + 'T23:59' })
+  ]);
+
+  screenshots = ssList;
+  activityData = actList;
+
+  updateStatsCount();
+  renderChart();
+  renderRecentGrid();
+  updateActivityStats();
+}
+
+function updateStatsCount() {
+  const today = new Date().toISOString().slice(0, 10);
+  const todayShots = screenshots.filter(s => s.timestamp && s.timestamp.startsWith(today));
+  document.getElementById('statScreenshots').textContent = todayShots.length;
+}
+
+function updateActivityStats() {
+  let totalClicks = 0, totalKeys = 0;
+  const appCounts = {};
+  const today = new Date().toISOString().slice(0, 10);
+
+  activityData.forEach(row => {
+    if (!row.bucket || !row.bucket.startsWith(today)) return;
+    totalClicks += row.mouse_clicks || 0;
+    totalKeys   += row.key_presses  || 0;
+    const app = row.app_name || 'Unknown';
+    appCounts[app] = (appCounts[app] || 0) + (row.mouse_clicks || 0) + (row.key_presses || 0);
+  });
+
+  document.getElementById('statClicks').textContent = totalClicks.toLocaleString();
+  document.getElementById('statKeys').textContent   = totalKeys.toLocaleString();
+
+  // Most active app
+  const topApp = Object.entries(appCounts).sort((a, b) => b[1] - a[1])[0];
+  document.getElementById('statActiveApp').textContent = topApp ? topApp[0] : '—';
+}
+
+function renderChart() {
+  const container = document.getElementById('chartBars');
+  const today = new Date().toISOString().slice(0, 10);
+  const todayData = activityData.filter(r => r.bucket && r.bucket.startsWith(today));
+
+  if (!todayData.length) {
+    container.innerHTML = '<div class="chart-empty">No activity data yet — start using your computer!</div>';
+    return;
+  }
+
+  // Group by hour
+  const byHour = {};
+  const appSet = new Set();
+  todayData.forEach(row => {
+    const hour = row.bucket ? row.bucket.slice(11, 13) : '00';
+    if (!byHour[hour]) byHour[hour] = {};
+    const app = row.app_name || 'Unknown';
+    appSet.add(app);
+    byHour[hour][app] = (byHour[hour][app] || 0) + (row.mouse_clicks || 0) + (row.key_presses || 0);
+  });
+
+  const appList = [...appSet].slice(0, 6);
+  const hours = Object.keys(byHour).sort();
+  const maxVal = Math.max(...hours.map(h => Object.values(byHour[h]).reduce((a,b) => a+b, 0)), 1);
+
+  container.innerHTML = hours.map(h => {
+    const total = Object.values(byHour[h]).reduce((a,b) => a+b, 0);
+    const heightPct = Math.max((total / maxVal) * 80, 2);
+    const bars = appList.map((app, i) => {
+      const v = byHour[h][app] || 0;
+      const hPct = Math.max((v / maxVal) * 80, 0);
+      return `<div class="chart-bar bar-${i}" style="height:${hPct}%" title="${app}: ${v}"></div>`;
+    }).join('');
+    return `<div class="chart-bar-wrap">
+      <div style="flex:1;display:flex;flex-direction:column-reverse;width:100%;gap:1px">${bars}</div>
+      <div class="chart-label">${h}:00</div>
+    </div>`;
+  }).join('');
+
+  // Legend
+  document.getElementById('activityAppLegend').textContent =
+    appList.map((a, i) => `● ${a}`).join('  ');
+}
+
+function renderRecentGrid() {
+  const grid = document.getElementById('recentGrid');
+  const recent = screenshots.slice(0, 8);
+  if (!recent.length) {
+    grid.innerHTML = '<div style="color:var(--text2);font-size:13px;padding:20px">No screenshots yet — capturing will start automatically.</div>';
+    return;
+  }
+  grid.innerHTML = recent.map(ss => screenshotCard(ss)).join('');
+}
+
+// ─── Screenshots ──────────────────────────────────────────────────
+async function loadScreenshots() {
+  const date = document.getElementById('filterDate')?.value || '';
+  const opts = date ? { date, limit: 200 } : { limit: 200 };
+  screenshots = await window.monitor.getScreenshots(opts);
+  renderAllGrid();
+}
+
+function clearDateFilter() {
+  document.getElementById('filterDate').value = '';
+  loadScreenshots();
+}
+
+function renderAllGrid() {
+  const grid = document.getElementById('allScreenshotsGrid');
+  const noSS = document.getElementById('noScreenshots');
+  if (!screenshots.length) {
+    grid.innerHTML = '';
+    noSS.style.display = 'flex';
+    return;
+  }
+  noSS.style.display = 'none';
+  grid.innerHTML = screenshots.map(ss => screenshotCard(ss, true)).join('');
+}
+
+function screenshotCard(ss, withDelete = false) {
+  const time = ss.timestamp ? new Date(ss.timestamp).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
+  const delBtn = withDelete
+    ? `<button class="ss-del" onclick="event.stopPropagation();deleteShot(${ss.id},${JSON.stringify(ss.filePath)})" title="Delete">✕</button>`
+    : '';
+  const imgSrc = ss.filePath ? `file://${ss.filePath}` : '';
+  const imgHtml = imgSrc
+    ? `<img class="ss-img" src="${imgSrc}" alt="Screenshot" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+      + `<div class="ss-img-placeholder" style="display:none">🖼️</div>`
+    : `<div class="ss-img-placeholder">🖼️</div>`;
+
+  return `<div class="ss-card" onclick="openLightbox(${JSON.stringify(ss).replace(/"/g, '&quot;')})">
+    ${imgHtml}
+    <div class="ss-info">
+      <div class="ss-time">${time}</div>
+      <div class="ss-app">${ss.appName || 'Unknown'}</div>
+    </div>
+    ${delBtn}
+  </div>`;
+}
+
+async function deleteShot(id, filePath) {
+  await window.monitor.deleteScreenshot(id, filePath);
+  screenshots = screenshots.filter(s => s.id !== id);
+  renderAllGrid();
+  renderRecentGrid();
+  updateStatsCount();
+}
+
+// ─── Lightbox ─────────────────────────────────────────────────────
+function openLightbox(ss) {
+  const lb = document.getElementById('lightbox');
+  const img = document.getElementById('lightboxImg');
+  const meta = document.getElementById('lightboxMeta');
+  img.src = ss.filePath ? `file://${ss.filePath}` : '';
+  meta.textContent = `${ss.appName || 'Unknown'} — ${ss.timestamp ? new Date(ss.timestamp).toLocaleString() : ''}`;
+  lb.style.display = 'flex';
+}
+
+function closeLightbox(event) {
+  if (!event || event.target === document.getElementById('lightbox') || event.target.classList.contains('lightbox-close')) {
+    document.getElementById('lightbox').style.display = 'none';
+  }
+}
+
+// ─── Settings ─────────────────────────────────────────────────────
+function loadSettings() {
+  document.getElementById('intervalRange').value = settings.captureInterval || 30;
+  document.getElementById('storageDirInput').value = settings.storageDir || '';
+  document.getElementById('maxDaysRange').value = settings.maxStorageDays || 30;
+  updateIntervalLabel();
+  updateMaxDaysLabel();
+  const launchOn = settings.launchAtLogin || false;
+  document.getElementById('launchToggle').className = 'toggle' + (launchOn ? ' on' : '');
+  document.getElementById('launchLabel').textContent = launchOn ? 'On' : 'Off';
+}
+
+function updateIntervalLabel() {
+  const val = +document.getElementById('intervalRange').value;
+  document.getElementById('intervalLabel').textContent = val < 60 ? val + 's' : Math.round(val/60) + 'm';
+}
+
+function updateMaxDaysLabel() {
+  document.getElementById('maxDaysLabel').textContent = document.getElementById('maxDaysRange').value + ' days';
+}
+
+function toggleLaunch() {
+  const t = document.getElementById('launchToggle');
+  const on = !t.classList.contains('on');
+  t.className = 'toggle' + (on ? ' on' : '');
+  document.getElementById('launchLabel').textContent = on ? 'On' : 'Off';
+}
+
+async function selectDir() {
+  const dir = await window.monitor.selectDirectory();
+  if (dir) document.getElementById('storageDirInput').value = dir;
+}
+
+async function saveSettings() {
+  const patch = {
+    captureInterval: +document.getElementById('intervalRange').value,
+    storageDir: document.getElementById('storageDirInput').value,
+    maxStorageDays: +document.getElementById('maxDaysRange').value,
+    launchAtLogin: document.getElementById('launchToggle').classList.contains('on')
+  };
+  await window.monitor.saveSettings(patch);
+  settings = { ...settings, ...patch };
+  const msg = document.getElementById('saveMsg');
+  msg.style.display = 'inline';
+  setTimeout(() => { msg.style.display = 'none'; }, 2500);
+}
+
+// ─── Controls ─────────────────────────────────────────────────────
+async function toggleCapture() {
+  if (isRunning) {
+    await window.monitor.stopCapture();
+    isRunning = false;
+  } else {
+    await window.monitor.startCapture();
+    isRunning = true;
+  }
+  updateStatusUI();
+}
+
+async function captureNow() {
+  const ss = await window.monitor.captureNow();
+  if (ss) {
+    screenshots.unshift(ss);
+    updateStatsCount();
+    renderRecentGrid();
+    renderAllGrid();
+  }
+}
+
+function updateStatusUI() {
+  const badge = document.getElementById('statusBadge');
+  const dot   = badge.querySelector('.status-dot');
+  const text  = document.getElementById('statusText');
+  const btn   = document.getElementById('stopBtn');
+
+  if (isRunning) {
+    badge.className = 'status-badge running';
+    dot.className   = 'status-dot pulse';
+    text.textContent = 'Recording';
+    btn.className    = 'btn btn-danger';
+    btn.textContent  = '⏸ Pause';
+  } else {
+    badge.className = 'status-badge paused';
+    dot.className   = 'status-dot';
+    text.textContent = 'Paused';
+    btn.className    = 'btn btn-success';
+    btn.textContent  = '▶ Resume';
+  }
+}
+
+// ─── Navigation ───────────────────────────────────────────────────
+function showView(name) {
+  ['dashboard', 'screenshots', 'settings'].forEach(v => {
+    document.getElementById('view-' + v).style.display = v === name ? 'flex' : 'none';
+  });
+  document.querySelectorAll('.nav-btn').forEach((btn, i) => {
+    const views = ['dashboard', 'screenshots', 'settings'];
+    btn.classList.toggle('active', views[i] === name);
+  });
+  if (name === 'screenshots') loadScreenshots();
+}
+
+// ─── Keyboard shortcuts ───────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeLightbox();
+});
+
+// ─── Bootstrap ────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
