@@ -121,7 +121,16 @@ app.whenReady().then(() => {
       return { ok: true };
     });
 
-    createLoginWindow();
+    const loginWin = createLoginWindow();
+
+    // If user closes login window without logging in → quit the app.
+    // Without this, the app runs invisibly (no window, no tray) on Windows
+    // and becomes impossible to close without Task Manager.
+    loginWin.on('closed', () => {
+      if (!getSettings().refreshToken) {
+        app.quit();
+      }
+    });
   } else {
     bootMainApp();
   }

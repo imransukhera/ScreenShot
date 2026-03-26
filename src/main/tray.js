@@ -23,8 +23,8 @@ function createTray() {
 
   updateTrayMenu();
 
-  // Update countdown every second
-  countdownTimer = setInterval(updateTrayMenu, 1000);
+  // Update countdown every 5 seconds (less heavy on Windows)
+  countdownTimer = setInterval(updateTrayMenu, 5000);
 
 
   return tray;

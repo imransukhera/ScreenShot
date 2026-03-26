@@ -46,6 +46,7 @@
     "files": [
       "src/**/*",
       "assets/**/*",
+      "build/**/*",
       "package.json"
     ],
     "mac": {
@@ -81,7 +82,8 @@
       "oneClick": true,
       "perMachine": false,
       "runAfterFinish": true,
-      "installerHeader": "assets/tray-icon.png"
+      "installerHeader": "assets/tray-icon.png",
+      "include": "build/installer.nsh"
     }
   }
 }
