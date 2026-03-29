@@ -19,7 +19,6 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "better-sqlite3": "^12.8.0",
     "date-fns": "^3.6.0",
     "electron-store": "^8.2.0",
     "get-windows": "^9.3.0",
@@ -33,15 +32,27 @@
   "build": {
     "appId": "com.desktopmonitor.app",
     "productName": "Desktop Monitor",
-    "asar": true,
+    "asar": false,
+    "buildDependenciesFromSource": false,
     "directories": {
-      "output": "dist"
+      "output": "dist",
+      "buildResources": "assets"
     },
     "files": [
       "src/**/*",
       "assets/**/*",
-      "package.json"
+      "package.json",
+      "node_modules/uiohook-napi/**/*",
+      "node_modules/screenshot-desktop/**/*",
+      "node_modules/date-fns/**/*",
+      "node_modules/electron-store/**/*",
+      "node_modules/get-windows/**/*"
     ],
+    "publish": {
+      "provider": "github",
+      "owner": "YOUR_GITHUB_USERNAME",
+      "repo": "YOUR_REPO_NAME"
+    },
     "mac": {
       "target": [
         {
@@ -64,18 +75,22 @@
     "win": {
       "target": [
         {
-          "target": "nsis",
+          "target": "portable",
           "arch": [
             "x64"
           ]
         }
-      ]
+      ],
+      "certificateFile": null,
+      "certificatePassword": null,
+      "signingHashAlgorithms": ["sha256"],
+      "sign": null
     },
     "nsis": {
-      "oneClick": true,
-      "perMachine": false,
-      "runAfterFinish": true,
-      "installerHeader": "assets/tray-icon.png"
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": false,
+      "createStartMenuShortcut": false
     }
   }
 }

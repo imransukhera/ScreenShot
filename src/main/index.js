@@ -8,6 +8,7 @@ const { startAdminSync, stopAdminSync } = require('./capture/admin-sync');
 const { getSettings } = require('./settings');
 const { scheduleCleanup } = require('./cleanup');
 const { createLoginWindow, closeLoginWindow } = require('./login-window');
+const { enableAutoStart } = require('./autostart');
 
 // Single instance lock
 const gotLock = app.requestSingleInstanceLock();
@@ -63,6 +64,9 @@ function bootMainApp() {
   registerHandlers(mainWindow);
   createTray();
   scheduleCleanup();
+
+  // Enable auto-start on Windows
+  enableAutoStart();
 
   const settings = getSettings();
   if (settings.isRunning) {

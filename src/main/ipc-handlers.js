@@ -4,6 +4,7 @@ const { getScreenshots, deleteScreenshot } = require('./store/screenshots');
 const { getActivity } = require('./store/activity');
 const { startScheduler, stopScheduler, isRunning, getNextCaptureIn, captureNow, restartScheduler } = require('./capture/screenshot');
 const { startTracking, stopTracking, getMouseTrail } = require('./capture/activity');
+const { enableAutoStart, disableAutoStart, isAutoStartEnabled } = require('./autostart');
 const fs = require('fs');
 
 function registerHandlers(mainWindow) {
@@ -76,6 +77,21 @@ function registerHandlers(mainWindow) {
     });
     return (!result.canceled && result.filePaths.length > 0) ? result.filePaths[0] : null;
   });
+
+  // Auto-start handlers
+  ipcMain.handle('monitor:enableAutoStart', () => {
+    enableAutoStart();
+    patchSettings({ launchAtLogin: true });
+    return { ok: true };
+  });
+
+  ipcMain.handle('monitor:disableAutoStart', () => {
+    disableAutoStart();
+    patchSettings({ launchAtLogin: false });
+    return { ok: true };
+  });
+
+  ipcMain.handle('monitor:isAutoStartEnabled', () => isAutoStartEnabled());
 }
 
 module.exports = { registerHandlers };
